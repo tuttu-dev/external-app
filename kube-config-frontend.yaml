@@ -1,0 +1,73 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: events-external
+  labels:
+    app: events-external
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: events-external
+  template:
+    metadata:
+      labels:
+        app: events-external
+    spec:
+      containers:
+      - name: events-external
+        image: gcr.io/complete-octane-281203/external-image:v1.0.0
+        env:
+        - name: PORT
+          value: "80"
+        - name: SERVER
+          value: "http://events-internal-service"
+        ports:
+        - containerPort: 8080
+          name: "events-port"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "0.1"
+          limits:
+            memory: "512Mi"
+            cpu: "0.5"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 60
+
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: events-external-service
+spec: 
+  ports: 
+     -  port: 80
+        protocol: TCP
+        targetPort: 8080
+  selector: 
+    app: events-external
+  type: LoadBalancer
+
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: events-external-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v2beta1
+    kind: Deployment
+    name: events-external
+  minReplicas: 3
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 60
