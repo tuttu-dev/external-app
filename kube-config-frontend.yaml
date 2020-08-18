@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: events-external
-        image: gcr.io/complete-octane-281203/external-image:v1.0.0
+        image: gcr.io/sincere-scheme-272009/external-image:v2
         env:
         - name: PORT
           value: "80"
